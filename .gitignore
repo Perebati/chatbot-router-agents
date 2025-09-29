@@ -214,6 +214,3 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-
-# Git setup script (don't track in history)
-setup_git_history.sh
