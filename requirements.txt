@@ -15,3 +15,4 @@ torch>=2.2
 python-dotenv
 beautifulsoup4
 lxml
+redis

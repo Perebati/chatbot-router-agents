@@ -36,3 +36,10 @@ DEFAULT_RETRIEVAL_K = int(os.environ.get("DEFAULT_RETRIEVAL_K", "5"))
 
 # Regex para links do InfinitePay
 LINK_REGEX = r'href="(https://ajuda\.infinitepay\.io/pt-BR/(?:articles|collections)/[^"]+)"'
+
+# Redis
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_LOG_STREAM = os.getenv("REDIS_LOG_STREAM", "logs:chat")
+REDIS_CONV_TTL_SECONDS = int(os.getenv("REDIS_CONV_TTL_SECONDS", "604800"))
+RATE_LIMIT_WINDOW_SEC = int(os.getenv("RATE_LIMIT_WINDOW_SEC", "60"))
+RATE_LIMIT_MAX_REQUESTS = int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "60"))

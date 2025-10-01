@@ -17,6 +17,12 @@ from agents.math_agent import MathAgent
 from services.crawling_service import CrawlingService
 from services.vector_store_service import VectorStoreService
 from config.settings import DEFAULT_SEED, PERSIST_DIR
+from services.redis_service import RedisService
+from config.settings import (
+    REDIS_URL, REDIS_LOG_STREAM, REDIS_CONV_TTL_SECONDS,
+    RATE_LIMIT_WINDOW_SEC, RATE_LIMIT_MAX_REQUESTS,
+)
+import time
 
 
 def ingest_command(args):
@@ -50,28 +56,65 @@ def interactive_loop():
     router = RouterAgent()
     knowledge_agent = KnowledgeAgent()
     math_agent = MathAgent()
-    
+    redis_service = RedisService(
+        REDIS_URL, REDIS_LOG_STREAM, REDIS_CONV_TTL_SECONDS
+    )
+
     print("=== Sistema de Chatbot InfinitePay ===")
     print("Digite 'q' para sair")
-    
+    user_id = "local-user"
+    conversation_id = "local-conv"
+    redis_service.add_user_conversation(user_id, conversation_id)
+
     while True:
         print("\n" + "="*50)
         question = input("Sua pergunta: ")
         print()
-        
         if question.strip().lower() == "q":
             print("Até logo!")
             break
 
+        # Rate limit
+        allowed, remaining = redis_service.rate_limit_allow(
+            user_id, RATE_LIMIT_WINDOW_SEC, RATE_LIMIT_MAX_REQUESTS
+        )
+        if not allowed:
+            print("Muitas requisições. Tente novamente em instantes.")
+            continue
+
+        # Persist user message
+        redis_service.append_message(
+            conversation_id, role="user", content=question, user_id=user_id
+        )
+
+        t0 = time.time()
         route = router.process(question)
+        dt = (time.time() - t0) * 1000.0
         print(f"[Router] Direcionando para: {route}")
-        
+
+        redis_service.log_json(
+            level="INFO",
+            agent="RouterAgent",
+            conversation_id=conversation_id,
+            user_id=user_id,
+            execution_time_ms=dt,
+            decision=route,
+            processed_content=question[:200],
+        )
+
         if route == "knowledge":
             response = knowledge_agent.process(question)
-        else:  
+            agent_name = "KnowledgeAgent"
+        else:
             response = math_agent.process(question)
-        
-        print(f"\n[{route.title()}Agent] {response}")
+            agent_name = "MathAgent"
+
+        redis_service.append_message(
+            conversation_id, role="assistant", content=response,
+            user_id=user_id, agent=agent_name
+        )
+
+        print(f"\n[{agent_name}] {response}")
 
 def main():
     """Função principal do sistema."""
