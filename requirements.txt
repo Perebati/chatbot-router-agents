@@ -1,6 +1,7 @@
 langchain
 langchain-ollama
 langchain-chroma
+langchain-community
 pandas
 llama-index>=0.11.0
 llama-index-llms-ollama>=0.2.0
@@ -11,3 +12,6 @@ chromadb>=0.5.4
 html2text>=2024.2.26
 transformers>=4.43.0
 torch>=2.2
+python-dotenv
+beautifulsoup4
+lxml
