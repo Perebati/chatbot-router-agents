@@ -16,12 +16,12 @@ class MathAgent(BaseAgent):
         self.model = OllamaLLM(model=self.model_name)
         
         self.template = """
-Resolva passo a passo, em português, depois dê a resposta final clara. 
+                        Resolva passo a passo, em português, depois dê a resposta final clara. 
 
-Pergunta: {question}
+                        Pergunta: {question}
 
-Resolução:
-"""
+                        Resolução:
+                        """
         
         self.prompt = ChatPromptTemplate.from_template(self.template)
         self.chain = self.prompt | self.model

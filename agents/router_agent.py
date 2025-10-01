@@ -15,17 +15,17 @@ class RouterAgent(BaseAgent):
         super().__init__(ROUTER_MODEL)
         self.model = OllamaLLM(model=self.model_name)
         self.template = """
-You are a RouterAgent.
-Your goal is to analyze the user question and classify it into one of two categories:
+                        You are a RouterAgent.
+                        Your goal is to analyze the user question and classify it into one of two categories:
 
-- "knowledge" - for questions about InfinitePay app, features, help, or support
-- "math" - for questions involving mathematical calculations or expressions
+                        - "knowledge" - for questions about InfinitePay app, features, help, or support
+                        - "math" - for questions involving mathematical calculations or expressions
 
-User question: {question}
+                        User question: {question}
 
-You must respond with exactly one word: either "knowledge" or "math". Nothing else.
+                        You must respond with exactly one word: either "knowledge" or "math". Nothing else.
 
-Classification:"""
+                        Classification:"""
         
         self.prompt = ChatPromptTemplate.from_template(self.template)
         self.chain = self.prompt | self.model
@@ -42,8 +42,7 @@ Classification:"""
         """
         result = self.chain.invoke({"question": query}).strip().lower()
         
-        # Garantir que a resposta seja válida
         if result not in {"knowledge", "math"}:
-            return "knowledge"  # default para knowledge
+            return "knowledge" 
             
         return result

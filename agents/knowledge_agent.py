@@ -21,21 +21,21 @@ class KnowledgeAgent(BaseAgent):
         self.vector_service = VectorStoreService()
         
         self.template = """
-Você é um assistente de suporte da InfinitePay. Responda em português do Brasil.
-Use APENAS as informações do contexto ao responder. Se não houver contexto suficiente, diga que não sabe.
+                        Você é um assistente de suporte da InfinitePay. Responda em português do Brasil.
+                        Use APENAS as informações do contexto ao responder. Se não houver contexto suficiente, diga que não sabe.
 
-Pergunta do usuário:
-{question}
+                        Pergunta do usuário:
+                        {question}
 
-Contexto (trechos relevantes de artigos da Central de Ajuda da InfinitePay):
-{context}
+                        Contexto (trechos relevantes de artigos da Central de Ajuda da InfinitePay):
+                        {context}
 
-Instruções:
-- Seja direto e prático.
-- Se existir, inclua os links/fonte dos artigos mencionados (use as metadatas 'source' ou 'link').
-- Se a pergunta não se relacionar à InfinitePay, diga que está fora do escopo.
-Resposta:
-"""
+                        Instruções:
+                        - Seja direto e prático.
+                        - Se existir, inclua os links/fonte dos artigos mencionados (use as metadatas 'source' ou 'link').
+                        - Se a pergunta não se relacionar à InfinitePay, diga que está fora do escopo.
+                        Resposta:
+                        """
         
         self.prompt = ChatPromptTemplate.from_template(self.template)
         self.chain = self.prompt | self.model
@@ -74,7 +74,6 @@ Resposta:
             
             answer = self.chain.invoke({"question": query, "context": context})
             
-            # Adicionar links das fontes
             links = []
             for d in docs:
                 link = d.metadata.get("source") or d.metadata.get("link") or d.metadata.get("url")

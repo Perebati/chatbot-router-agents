@@ -23,18 +23,15 @@ def ingest_command(args):
     """Executa o processo de ingestão de dados."""
     print("[ingest] Iniciando ingestão...")
     
-    # Serviços
     crawling_service = CrawlingService()
     vector_service = VectorStoreService()
     
-    # Crawling
     docs = crawling_service.crawl_knowledge_base(
         seed_url=args.seed,
         max_depth=args.max_depth,
         timeout=args.timeout,
     )
     
-    # Processamento
     print("[ingest] Dividindo documentos...")
     chunks = vector_service.split_documents(
         docs, 
@@ -42,7 +39,6 @@ def ingest_command(args):
         chunk_overlap=args.chunk_overlap
     )
     
-    # Construção do vectorstore
     print(f"[ingest] {len(chunks)} chunks gerados. Construindo vector store...")
     vector_service.build_vectorstore(chunks)
     
@@ -51,7 +47,6 @@ def ingest_command(args):
 
 def interactive_loop():
     """Loop interativo principal do chatbot."""
-    # Inicializar agentes
     router = RouterAgent()
     knowledge_agent = KnowledgeAgent()
     math_agent = MathAgent()
@@ -68,14 +63,12 @@ def interactive_loop():
             print("Até logo!")
             break
 
-        # Roteamento
         route = router.process(question)
         print(f"[Router] Direcionando para: {route}")
         
-        # Processamento pela agent apropriada
         if route == "knowledge":
             response = knowledge_agent.process(question)
-        else:  # math
+        else:  
             response = math_agent.process(question)
         
         print(f"\n[{route.title()}Agent] {response}")
@@ -85,7 +78,6 @@ def main():
     parser = argparse.ArgumentParser(description="InfinitePay RAG with LangChain + Ollama (incremental).")
     sub = parser.add_subparsers(dest="cmd")
 
-    # Comando de ingestão
     p_ingest = sub.add_parser("ingest", help="Crawl + embed + persist the InfinitePay help center.")
     p_ingest.add_argument("--seed", default=DEFAULT_SEED, help="Seed URL for recursive crawl fallback.")
     p_ingest.add_argument("--no-sitemap", action="store_true", help="Skip sitemap and force recursive crawl.")
@@ -94,7 +86,6 @@ def main():
     p_ingest.add_argument("--chunk-size", type=int, default=800)
     p_ingest.add_argument("--chunk-overlap", type=int, default=120)
 
-    # Comando para fazer uma pergunta
     p_ask = sub.add_parser("ask", help="Ask one question against the persisted vector DB.")
     p_ask.add_argument("--q", required=True, help="Your question.")
     p_ask.add_argument("--route", choices=["auto", "knowledge", "math"], default="auto", help="Force a route or auto.")
@@ -106,7 +97,6 @@ def main():
         return
 
     if args.cmd == "ask":
-        # Inicializar agentes
         router = RouterAgent()
         knowledge_agent = KnowledgeAgent()
         math_agent = MathAgent()
@@ -122,7 +112,6 @@ def main():
             print(math_agent.process(args.q))
         return
 
-    # Modo interativo por padrão
     interactive_loop()
 
 
