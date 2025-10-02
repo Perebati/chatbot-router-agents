@@ -1,7 +1,8 @@
-version: "3.9" 
+version: "3.9"
+
 services:
   redis:
-    image: redis:8-alpine        
+    image: redis:8-alpine
     container_name: redis
     command:
       - "redis-server"
@@ -22,5 +23,55 @@ services:
       retries: 5
     restart: unless-stopped
 
+  kc-db:
+    image: postgres:16-alpine
+    container_name: kc-db
+    environment:
+      POSTGRES_DB: ${KC_DB_DATABASE}
+      POSTGRES_USER: ${KC_DB_USERNAME}
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+      TZ: America/Sao_Paulo
+    volumes:
+      - kc-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  keycloak:
+      image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION}
+      container_name: keycloak
+      depends_on:
+        kc-db:
+          condition: service_healthy
+      environment:
+        KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+        KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+        KC_DB: postgres
+        KC_DB_URL: jdbc:postgresql://kc-db:5432/${KC_DB_DATABASE}
+        KC_DB_USERNAME: ${KC_DB_USERNAME}
+        KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+        KC_HOSTNAME: ${KC_HOSTNAME}
+        KC_HTTP_ENABLED: "true"         # <= habilita HTTP (8080)
+        KC_HEALTH_ENABLED: "true"
+        KC_METRICS_ENABLED: "true"
+        TZ: America/Sao_Paulo
+      entrypoint: ["/opt/keycloak/bin/kc.sh"]
+      command: ["start"]                # produção, porém aceitando HTTP
+      ports:
+        - "${KC_HTTP_PORT:-8080}:8080"
+      volumes:
+        - kc-data:/opt/keycloak/data
+      healthcheck:
+        test: ["CMD-SHELL", "exec curl -fsS http://localhost:8080/health/ready || exit 1"]
+        interval: 10s
+        timeout: 5s
+        retries: 20
+      restart: unless-stopped
+
 volumes:
   redis-data:
+  kc-db-data:
+  kc-data:
