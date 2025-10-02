@@ -1,0 +1,41 @@
+<!-- Sem build, só para testar -->
+<!doctype html>
+<html>
+  <body>
+    <textarea id="log" rows="20" cols="80"></textarea><br/>
+    <input id="msg" placeholder="Pergunte algo..." style="width: 400px;">
+    <button id="send">Enviar</button>
+    <script>
+      const ws = new WebSocket("ws://localhost:8000/ws/chat");
+      const log = document.getElementById('log');
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({
+          user_id: "client789",
+          conversation_id: "conv-1234",
+          message: "Qual a taxa da maquininha?"
+        }));
+      };
+      ws.onmessage = (evt) => {
+        const data = JSON.parse(evt.data);
+        if (data.type === "token") log.value += data.data;
+        if (data.type === "final") log.value += "\n\n[finalizado]";
+      };
+      document.getElementById('send').onclick = () => {
+        // Nova pergunta = nova conexão neste exemplo simples
+        const m = document.getElementById('msg').value;
+        const ws2 = new WebSocket("ws://localhost:8000/ws/chat");
+        ws2.onopen = () => ws2.send(JSON.stringify({
+          user_id: "client789",
+          conversation_id: "conv-1234",
+          message: m
+        }));
+        ws2.onmessage = (e) => {
+          const d = JSON.parse(e.data);
+          if (d.type === "token") log.value += d.data;
+          if (d.type === "final") log.value += "\n\n[finalizado]";
+        };
+      };
+    </script>
+  </body>
+</html>

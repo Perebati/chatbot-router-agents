@@ -7,6 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from .base_agent import BaseAgent
 from config.settings import ROUTER_MODEL
 
+from typing import Iterable
 
 class MathAgent(BaseAgent):
     """Agente que resolve problemas matemáticos."""
@@ -37,3 +38,9 @@ class MathAgent(BaseAgent):
             str: Solução passo a passo
         """
         return self.chain.invoke({"question": query})
+    
+    def process_stream(self, question: str) -> Iterable[str]:
+        # Para math, normalmente é determinístico e curto; pode streamar por etapas
+        result = self.process(question)
+        for i in range(0, len(result), 8):
+            yield result[i:i+8]

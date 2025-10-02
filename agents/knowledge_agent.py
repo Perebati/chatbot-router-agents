@@ -1,6 +1,7 @@
 """
 Agente de conhecimento que responde usando RAG.
 """
+import os
 import traceback
 from typing import List, Tuple
 
@@ -10,6 +11,12 @@ from langchain_core.prompts import ChatPromptTemplate
 from .base_agent import BaseAgent
 from config.settings import ROUTER_MODEL
 from services.vector_store_service import VectorStoreService
+
+from typing import Iterable
+try:
+    from ollama import Client
+except Exception:
+    Client = None
 
 
 class KnowledgeAgent(BaseAgent):
@@ -88,3 +95,60 @@ class KnowledgeAgent(BaseAgent):
         except Exception:
             traceback.print_exc()
             return "Desculpe, ocorreu um erro ao consultar a base. Tente reindexar com --ingest."
+        
+    def process_stream(self, question: str) -> Iterable[str]:
+        """
+        Versão em streaming que usa o mesmo RAG (embeddings + retriever) de `process`.
+        Se Ollama streaming não estiver disponível, faz fallback para `process`.
+        """
+        try:
+            # Usa o mesmo retriever baseado em embeddings
+            context, docs = self._retrieve_context(question, k=5)
+
+            if not context:
+                yield "Desculpe, não encontrei informações relevantes na base de conhecimento."
+                return
+
+            # Prompt equivalente ao template usado em `process`
+            prompt = f"""
+                Você é um assistente de suporte da InfinitePay. Responda em português do Brasil.
+                Use APENAS as informações do contexto ao responder. Se não houver contexto suficiente, diga que não sabe.
+
+                Pergunta do usuário:
+                {question}
+
+                Contexto (trechos relevantes de artigos da Central de Ajuda da InfinitePay):
+                {context}
+
+                Instruções:
+                - Seja direto e prático.
+                - Se existir, inclua os links/fonte dos artigos mencionados (use as metadatas 'source' ou 'link').
+                - Se a pergunta não se relacionar à InfinitePay, diga que está fora do escopo.
+                Resposta:
+                """.strip()
+
+            # Streaming real via Ollama, senão fallback
+            model_name = self.model_name  # mantém consistência com __init__
+            if Client is None:
+                # Fallback: mantém comportamento correto (inclui fontes) chamando `process`
+                yield self.process(question)
+                return
+
+            cli = Client()
+            for part in cli.generate(model=model_name, prompt=prompt, stream=True):
+                token = part.get("response", "")
+                if token:
+                    yield token
+
+            # Ao final, emite fontes como no `process`
+            links = []
+            for d in docs:
+                link = d.metadata.get("source") or d.metadata.get("link") or d.metadata.get("url")
+                if link and link not in links:
+                    links.append(link)
+            if links:
+                yield "\n\nFontes:\n" + "\n".join(f"- {u}" for u in links)
+
+        except Exception:
+            # Em caso de erro, retorna mensagem segura
+            yield "Desculpe, ocorreu um erro ao consultar a base. Tente reindexar com --ingest."

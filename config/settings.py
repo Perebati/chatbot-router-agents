@@ -22,7 +22,7 @@ USER_AGENT = os.environ.get(
 )
 
 # Configurações do banco de dados vetorial
-PERSIST_DIR = os.environ.get("INFINITEPAY_DB_DIR", "./chroma_infinitepay")
+PERSIST_DIR = os.environ.get("INFINITEPAY_DB_DIR", "./.chroma_infinitepay")
 COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "infinitepay_helpcenter")
 
 # Configurações de chunk para processamento de documentos

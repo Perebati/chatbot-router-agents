@@ -16,3 +16,6 @@ python-dotenv
 beautifulsoup4
 lxml
 redis
+fastapi
+python-dotenv
+uvicorn[standard]
