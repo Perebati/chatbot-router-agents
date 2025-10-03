@@ -24,6 +24,8 @@ from config.settings import (
     RATE_LIMIT_WINDOW_SEC, RATE_LIMIT_MAX_REQUESTS,
 )
 
+#uvicorn api.server:app --reload --host ${API_HOST:-0.0.0.0} --port ${API_PORT:-8000}
+
 app = FastAPI(title="Chatbot API", version="1.0.0")
 
 # CORS
